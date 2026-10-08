@@ -19,7 +19,6 @@
 package net.ccbluex.liquidbounce.injection.mixins.minecraft.render;
 
 import com.llamalad7.mixinextras.injector.ModifyExpressionValue;
-import net.ccbluex.liquidbounce.features.module.modules.render.ModuleFPSBoost;
 import net.ccbluex.liquidbounce.features.module.modules.render.customambience.ModuleCustomAmbience;
 import net.minecraft.client.renderer.WeatherEffectRenderer;
 import net.minecraft.world.level.biome.Biome;
@@ -34,11 +33,6 @@ public abstract class MixinWeatherEffectRenderer {
     private float ambientPrecipitation2(float original) {
         var moduleCustomAmbience = ModuleCustomAmbience.INSTANCE;
         if (moduleCustomAmbience.getRunning() && moduleCustomAmbience.getWeather().get() == ModuleCustomAmbience.WeatherType.SNOWY) {
-            return 0f;
-        }
-
-        var moduleFPSBoost = ModuleFPSBoost.INSTANCE;
-        if (moduleFPSBoost.getRunning() && moduleFPSBoost.getNoWeather()) {
             return 0f;
         }
 

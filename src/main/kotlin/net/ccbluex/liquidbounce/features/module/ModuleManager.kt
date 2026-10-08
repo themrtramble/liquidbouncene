@@ -202,7 +202,6 @@ import net.ccbluex.liquidbounce.features.module.modules.render.customambience.Mo
 import net.ccbluex.liquidbounce.features.module.modules.render.ModuleDamageParticles
 import net.ccbluex.liquidbounce.features.module.modules.render.ModuleDebug
 import net.ccbluex.liquidbounce.features.module.modules.render.ModuleFreeCam
-import net.ccbluex.liquidbounce.features.module.modules.render.ModuleFPSBoost
 import net.ccbluex.liquidbounce.features.module.modules.render.ModuleFreeLook
 import net.ccbluex.liquidbounce.features.module.modules.render.ModuleFullBright
 import net.ccbluex.liquidbounce.features.module.modules.render.ModuleHoleESP
@@ -639,7 +638,6 @@ object ModuleManager : EventListener, Collection<ClientModule> by modules {
             ModuleFreeCam,
             ModuleSmoothCamera,
             ModuleFreeLook,
-            ModuleFPSBoost,
             ModuleFullBright,
             ModuleHoleESP,
             ModuleHud,
