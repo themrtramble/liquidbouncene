@@ -203,7 +203,7 @@ object ConfigSystem {
         val modulesFile = File(rootFolder, "modules.json")
         runCatching {
             if (modulesFile.exists()) {
-                val root = modulesFile.reader().parseTree().asJsonObject
+                val root = fileGson.newJsonReader(modulesFile.reader()).use { it.parseTree().asJsonObject }
                 val criticals = root.get("Criticals")?.takeIf { it.isJsonObject }?.asJsonObject
 
                 if (criticals != null) {
