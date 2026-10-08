@@ -101,6 +101,15 @@ object ModuleKillAura : ClientModule("KillAura", ModuleCategories.COMBAT) {
     private val criticalsSelectionMode by enumChoice("Criticals", CriticalsSelectionMode.SMART)
     private val keepSprint by boolean("KeepSprint", true)
 
+    /**
+     * Runtime override for the sprint-keeping behavior — not persisted.
+     * While set, takes precedence over the configured [keepSprint] value.
+     */
+    internal var keepSprintOverride: (() -> Boolean?)? = null
+
+    private val effectiveKeepSprint: Boolean
+        get() = keepSprintOverride?.invoke() ?: keepSprint
+
     // Inventory Handling
     internal val ignoreOpenInventory by boolean("IgnoreOpenInventory", true)
     internal val simulateInventoryClosing by boolean("SimulateInventoryClosing", true)
@@ -287,7 +296,7 @@ object ModuleKillAura : ClientModule("KillAura", ModuleCategories.COMBAT) {
                 }
 
                 // Attack enemy
-                attackEntity(target, SwingMode.DO_NOT_HIDE, keepSprint && !shouldBlockSprinting)
+                attackEntity(target, SwingMode.DO_NOT_HIDE, effectiveKeepSprint && !shouldBlockSprinting)
                 range.update()
                 KillAuraNotifyWhenFail.failedHitsIncrement = 0
                 KillAuraAutoBlock.hasBlockedSinceAttack = false

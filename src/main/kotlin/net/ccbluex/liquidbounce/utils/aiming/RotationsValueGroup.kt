@@ -25,6 +25,7 @@ import net.ccbluex.liquidbounce.features.addon.AddonApi
 import net.ccbluex.liquidbounce.utils.aiming.data.Rotation
 import net.ccbluex.liquidbounce.utils.aiming.features.MovementCorrection
 import net.ccbluex.liquidbounce.utils.aiming.features.processors.FailRotationProcessor
+import net.ccbluex.liquidbounce.utils.aiming.features.processors.RotationProcessor
 import net.ccbluex.liquidbounce.utils.aiming.features.processors.ShortStopRotationProcessor
 import net.ccbluex.liquidbounce.utils.aiming.features.processors.anglesmooth.AngleSmooth
 import net.ccbluex.liquidbounce.utils.aiming.features.processors.anglesmooth.impl.AccelerationAngleSmooth
@@ -60,6 +61,13 @@ open class RotationsValueGroup(
      */
     internal var angleSmoothOverrideProvider: (() -> AngleSmooth?)? = null
 
+    /**
+     * Optional provider for additional runtime rotation processors — not persisted.
+     * The processors are appended after the angle smooth mode and before the
+     * configured fail/short-stop processors.
+     */
+    internal var extraProcessorsProvider: (() -> List<RotationProcessor>)? = null
+
     private fun effectiveAngleSmooth(): AngleSmooth =
         angleSmoothOverrideProvider?.invoke() ?: angleSmooth.activeMode
 
@@ -92,20 +100,24 @@ open class RotationsValueGroup(
         entity: Entity? = null,
         considerInventory: Boolean = false,
         whenReached: RestrictedSingleUseAction? = null
-    ) = RotationTarget(
-        rotation,
-        entity,
-        listOfNotNull(
-            effectiveAngleSmooth(),
-            fail?.takeIf { it.running },
-            shortStop?.takeIf { it.running }
-        ),
-        ticksUntilReset,
-        resetThreshold,
-        considerInventory,
-        movementCorrection,
-        whenReached
-    )
+    ): RotationTarget {
+        val processors = mutableListOf<RotationProcessor>()
+        processors.add(effectiveAngleSmooth())
+        extraProcessorsProvider?.invoke()?.let(processors::addAll)
+        fail?.takeIf { it.running }?.let(processors::add)
+        shortStop?.takeIf { it.running }?.let(processors::add)
+
+        return RotationTarget(
+            rotation,
+            entity,
+            processors,
+            ticksUntilReset,
+            resetThreshold,
+            considerInventory,
+            movementCorrection,
+            whenReached
+        )
+    }
 
     /**
      * How long it takes to rotate to a rotation in ticks

@@ -30,7 +30,17 @@ open class ItemCooldown : ValueGroup("ItemCooldown", aliases = listOf("Cooldown"
         0.93f..1.0f, 0.0f..2.0f
     )
 
-    private var nextCooldown = minimumCooldown.random()
+    /**
+     * Runtime override for the minimum cooldown range — not persisted.
+     * While set, [newCooldown] draws the next threshold from this range instead
+     * of the configured one (used by humanized combat profiles).
+     */
+    internal var runtimeMinimumProvider: (() -> ClosedFloatingPointRange<Float>?)? = null
+
+    private fun effectiveMinimum(): ClosedFloatingPointRange<Float> =
+        runtimeMinimumProvider?.invoke() ?: minimumCooldown
+
+    private var nextCooldown = effectiveMinimum().random()
 
     open fun isCooldownPassed(ticks: Int = 0) = cooldownProgress(ticks) >= nextCooldown
 
@@ -48,7 +58,7 @@ open class ItemCooldown : ValueGroup("ItemCooldown", aliases = listOf("Cooldown"
      * Generates a new cooldown based on the range that was set by the user.
      */
     fun newCooldown() {
-        nextCooldown = minimumCooldown.random()
+        nextCooldown = effectiveMinimum().random()
     }
 
 }

@@ -67,8 +67,15 @@ object KillAuraTargetTracker : TargetTracker() {
         if (KillAuraHuman.enabled) {
             // Humanized: attack what is in front of you — prioritise enemies by view
             // direction, like a real player tracking targets with their crosshair.
-            // The stable sort keeps the regular priorities as a tiebreaker.
-            entities.sortWith(compareBy { RotationUtil.crosshairAngleToEntity(it) })
+            // The current target gets a small angular bonus so the sort does not
+            // flip-flop between two enemies every tick.
+            val currentTarget = target
+            entities.sortWith(
+                compareBy { entity ->
+                    val angle = RotationUtil.crosshairAngleToEntity(entity)
+                    if (entity === currentTarget) angle - 10f else angle
+                }
+            )
         }
 
         return entities

@@ -39,14 +39,41 @@ open class RangeValueGroup(
 ) : ValueGroup(name), MinecraftShortcuts {
 
     /**
+     * Runtime cap for the total interaction range — not persisted.
+     * While set, [interactionRange] and [adjustAttackRange] never exceed the cap,
+     * so attacks stay within vanilla-legal reach (anti-cheat safety).
+     */
+    internal var runtimeRangeCapProvider: (() -> Float?)? = null
+
+    /**
+     * Runtime cap for the through-walls range — not persisted.
+     */
+    internal var runtimeThroughWallsCapProvider: (() -> Float?)? = null
+
+    /**
+     * The effective range increase, capped by the runtime provider when active.
+     */
+    private fun effectiveRangeIncrease(): Float {
+        val cap = runtimeRangeCapProvider?.invoke() ?: return maxRangeIncrease
+
+        val attributeRange = mc.player?.getAttributeValue(Attributes.ENTITY_INTERACTION_RANGE)?.toFloat() ?: 3.0f
+
+        return (cap - attributeRange).coerceAtMost(maxRangeIncrease)
+    }
+
+    /**
      * @see net.minecraft.world.entity.player.Player.entityInteractionRange
      */
     val interactionRange: Float
         get() = (mc.player?.getAttributeValue(Attributes.ENTITY_INTERACTION_RANGE)?.toFloat()
-            ?: 3.0F) + maxRangeIncrease
+            ?: 3.0F) + effectiveRangeIncrease()
 
     val interactionThroughWallsRange
-        get() = throughWallsRange
+        get() {
+            val value = throughWallsRange
+            val cap = runtimeThroughWallsCapProvider?.invoke() ?: return value
+            return value.coerceAtMost(cap)
+        }
 
     /**
      * Increases the attack max-range.
@@ -89,9 +116,9 @@ open class RangeValueGroup(
     fun adjustAttackRange(attackRange: AttackRange = AttackRange.defaultFor(player)) =
         AttackRange(
             max(0f, attackRange.minReach/* - minRangeDecrease*/),
-            attackRange.maxReach + this@RangeValueGroup.maxRangeIncrease,
+            attackRange.maxReach + effectiveRangeIncrease(),
             max(0f, attackRange.minCreativeReach/* - minRangeDecrease*/),
-            attackRange.maxCreativeReach + this@RangeValueGroup.maxRangeIncrease,
+            attackRange.maxCreativeReach + effectiveRangeIncrease(),
             attackRange.hitboxMargin,
             attackRange.mobFactor
         )
