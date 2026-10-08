@@ -28,8 +28,8 @@ import net.minecraft.world.phys.Vec2
 
 class LinearAngleSmooth(
     parent: ModeValueGroup<*>,
-    horizontalTurnSpeed: ClosedFloatingPointRange<Float> = 180f..180f,
-    verticalTurnSpeed: ClosedFloatingPointRange<Float> = 180f..180f,
+    horizontalTurnSpeed: ClosedFloatingPointRange<Float> = 20f..30f,
+    verticalTurnSpeed: ClosedFloatingPointRange<Float> = 12f..20f,
 ) : FactorAngleSmooth("Linear", parent) {
 
     private val horizontalTurnSpeed by floatRange("HorizontalTurnSpeed", horizontalTurnSpeed,

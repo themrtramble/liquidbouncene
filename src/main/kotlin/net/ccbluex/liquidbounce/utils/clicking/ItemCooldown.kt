@@ -27,7 +27,7 @@ open class ItemCooldown : ValueGroup("ItemCooldown", aliases = listOf("Cooldown"
 
     private val minimumCooldown by floatRange(
         "Minimum",
-        1.0f..1.0f, 0.0f..2.0f
+        0.0f..0.0f, 0.0f..2.0f
     )
 
     private var nextCooldown = minimumCooldown.random()
