@@ -75,7 +75,7 @@ open class Clicker<T>(
      * Applies to the FailSwing feature as well.
      */
     private val missCooldown: Value<Boolean>? = if (keyBinding == mc.options.keyAttack) {
-        boolean("MissCooldown", true, aliases = listOf("AttackCooldown"))
+        boolean("MissCooldown", false, aliases = listOf("AttackCooldown"))
     } else {
         null
     }
