@@ -104,58 +104,12 @@ jobs:
           CI: true
           GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
         run: ./gradlew build -x test -x detekt
-      - name: Publish snapshot to maven.ccbluex.net
-        env:
-          MAVEN_USERNAME: ${{ secrets.MAVEN_TOKEN_NAME }}
-          MAVEN_PASSWORD: ${{ secrets.MAVEN_TOKEN_SECRET }}
-          LB_VERSION: ${{ needs.extract-versions.outputs.lb_version }}
-          MINECRAFT_VERSION: ${{ needs.extract-versions.outputs.minecraft_version }}
-        run: |
-          set -euo pipefail
-
-          ./gradlew publish -x test -x detekt
-          ./gradlew publish -x test -x detekt \
-            -Ppublish.version="${LB_VERSION}+${MINECRAFT_VERSION}-${GITHUB_SHA::7}-SNAPSHOT"
       - name: Upload artifact
-        env:
-          COMMIT_MESSAGE: ${{ github.event.head_commit.message }}
-          JDK_VERSION: ${{ needs.extract-versions.outputs.jdk_version }}
-          LB_VERSION: ${{ needs.extract-versions.outputs.lb_version }}
-          MINECRAFT_VERSION: ${{ needs.extract-versions.outputs.minecraft_version }}
-          LOADER_VERSION: ${{ needs.extract-versions.outputs.loader_version }}
-          FABRICAPI_VERSION: ${{ needs.extract-versions.outputs.fabricapi_version }}
-          KOTLIN_VERSION: ${{ needs.extract-versions.outputs.kotlin_version }}
-          FABRIC_KOTLIN_VERSION: ${{ needs.extract-versions.outputs.fabric_kotlin_version }}
-        run: |
-          set -euo pipefail
-          
-          cd build/libs
-          JAR=$(find . -regex '.*liquidbounce-[0-9.]*\.jar')
-          if [ -z "$JAR" ]; then
-            echo "[ERROR] built jar not found in build/libs" >&2
-            exit 1
-          fi
-          
-          cp $JAR zip/liquidbounce.jar
-          cd zip
-          zip -r liquidbounce.zip *
-          md5sum liquidbounce.zip
-          
-          curl --connect-timeout 30 -m 300 -X POST -F "artifact=@liquidbounce.zip" \
-            -H "Authorization: ${{ secrets.NIGHTLY_PASS }}" \
-            -F "gh_id=${{ github.event.head_commit.id }}" \
-            -F "gh_ref=${{ github.ref }}" \
-            -F "gh_message=${COMMIT_MESSAGE}" \
-            -F "gh_timestamp=${{ github.event.head_commit.timestamp }}" \
-            -F "lb_version=$LB_VERSION" \
-            -F "mc_version=$MINECRAFT_VERSION" \
-            -F "subsystem=fabric" \
-            -F "jre_version=$JDK_VERSION" \
-            -F "fabric_loader_version=$LOADER_VERSION" \
-            -F "fabric_api_version=$FABRICAPI_VERSION" \
-            -F "kotlin_version=$KOTLIN_VERSION" \
-            -F "fabric_kotlin_version=$FABRIC_KOTLIN_VERSION" \
-            https://api.liquidbounce.net/api/v1/version/new
+        uses: actions/upload-artifact@v4
+        with:
+          name: liquidbouncene-jar
+          path: build/libs/liquidbounce-*.jar
+          if-no-files-found: error
 
   publish-release:
     runs-on: ubuntu-latest
@@ -237,7 +191,7 @@ jobs:
     # A normal run takes about 5 minutes; the Gradle task gives up after 10
     timeout-minutes: 20
     # nextgen fills the library cache that pull requests read
-    if: github.event_name == 'pull_request' || github.ref == 'refs/heads/nextgen'
+    if: github.event_name == 'pull_request'
     steps:
       - name: Checkout repository and submodules
         uses: actions/checkout@v6
