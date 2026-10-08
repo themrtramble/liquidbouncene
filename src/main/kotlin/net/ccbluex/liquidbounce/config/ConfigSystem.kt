@@ -178,9 +178,50 @@ object ConfigSystem {
      * Loads all registered configs.
      */
     fun loadAll() {
+        migrateSavedModuleStates()
+
         for (valueGroup in configs) { // Make a new .json file to save our root config
             load(valueGroup)
         }
+    }
+
+    /**
+     * One-time migration of saved module states.
+     *
+     * v5 shipped with ModuleCriticals enabled by default; users who ran that
+     * build have "Criticals": { "Enabled": true } persisted in modules.json,
+     * which would keep overriding the new default (OFF). Packet crit modes
+     * cause instant kicks on strict anticheat servers, so force-disable the
+     * module once on upgrade. Runs at most once (marker file).
+     */
+    private fun migrateSavedModuleStates() {
+        val marker = File(rootFolder, ".x_crits_off_migration")
+        if (marker.exists()) {
+            return
+        }
+
+        val modulesFile = File(rootFolder, "modules.json")
+        runCatching {
+            if (modulesFile.exists()) {
+                val root = modulesFile.reader().parseTree().asJsonObject
+                val criticals = root.get("Criticals")?.takeIf { it.isJsonObject }?.asJsonObject
+
+                if (criticals != null) {
+                    criticals.addProperty("Enabled", false)
+                    modulesFile.bufferedWriter().use { writer ->
+                        fileGson.newJsonWriter(writer).use { jsonWriter ->
+                            fileGson.toJson(root, JsonObject::class.java, jsonWriter)
+                        }
+                    }
+                    logger.info("Migration: disabled Criticals module in saved config " +
+                        "(packet crits were causing server kicks).")
+                }
+            }
+        }.onFailure {
+            logger.error("Criticals migration failed", it)
+        }
+
+        runCatching { marker.createNewFile() }
     }
 
     fun load(config: Config) {

@@ -51,11 +51,10 @@ import net.minecraft.world.level.block.WebBlock
  *
  * Automatically crits every time you attack someone.
  */
-object ModuleCriticals : ClientModule(
-    "Criticals",
-    ModuleCategories.COMBAT,
-    state = true
-) {
+object ModuleCriticals : ClientModule("Criticals", ModuleCategories.COMBAT) {
+    // Default OFF: Packet crit modes send Y-offset packets that strict
+    // anticheats flag (instant kicks). Natural crits still work via
+    // full-strength timed attacks while falling (e.g. sprint-jump crits).
 
     val modes = choices("Mode", 1) {
         arrayOf(
