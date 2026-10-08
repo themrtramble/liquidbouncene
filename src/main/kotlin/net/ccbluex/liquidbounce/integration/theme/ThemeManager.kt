@@ -134,7 +134,9 @@ object ThemeManager : Config("theme") {
 
     suspend fun init() {
         // Load default theme
-        includedTheme = Theme.load(Theme.Origin.RESOURCE, File(LiquidBounce.CLIENT_NAME.lowercase()))
+        // NOTE: folder name hardcoded (NOT CLIENT_NAME.lowercase()) — must match the
+        // physical resource folder resources/liquidbounce/themes/liquidbounce in the JAR.
+        includedTheme = Theme.load(Theme.Origin.RESOURCE, File("liquidbounce"))
     }
 
     suspend fun load() {

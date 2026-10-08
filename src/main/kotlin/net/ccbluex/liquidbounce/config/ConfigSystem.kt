@@ -50,11 +50,11 @@ object ConfigSystem {
         private set
 
     // Config directory folder
-    // NOTE: hardcoded "LiquidBounceNE" instead of CLIENT_NAME — decouples config
+    // NOTE: hardcoded "LiquidBounceX" instead of CLIENT_NAME — decouples config
     // isolation from the resource namespace (liquidbounce:) that themes and
     // assets depend on. Renaming CLIENT_NAME breaks resource loading.
     val rootFolder = File(
-        mc.gameDirectory, "LiquidBounceNE"
+        mc.gameDirectory, "LiquidBounceX"
     ).apply {
         // Check if there is already a config folder and if not create new folder
         // (mkdirs not needed - .minecraft should always exist)

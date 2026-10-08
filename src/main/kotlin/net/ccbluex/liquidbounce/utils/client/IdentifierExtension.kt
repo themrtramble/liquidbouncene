@@ -19,15 +19,18 @@
 
 package net.ccbluex.liquidbounce.utils.client
 
-import net.ccbluex.liquidbounce.LiquidBounce.CLIENT_NAME
 import net.minecraft.resources.Identifier
 import java.util.Locale
 
 /**
- * Creates an [net.minecraft.resources.Identifier] starts with [CLIENT_NAME].
+ * Creates an [net.minecraft.resources.Identifier] in the client resource namespace.
+ *
+ * NOTE: the namespace is hardcoded "liquidbounce" on purpose — it must match
+ * the physical resource folder (resources/liquidbounce) and NOT the display
+ * name [CLIENT_NAME], which is safe to rebrand.
  */
 internal fun clientIdentifier(path: String): Identifier =
-    Identifier.fromNamespaceAndPath(CLIENT_NAME.lowercase(Locale.ROOT), path)
+    Identifier.fromNamespaceAndPath("liquidbounce", path)
 
 /**
  * Converts an [Identifier] to a human-readable name without localization.

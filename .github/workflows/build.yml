@@ -107,8 +107,8 @@ jobs:
       - name: Upload artifact
         uses: actions/upload-artifact@v4
         with:
-          name: liquidbouncene-jar
-          path: build/libs/liquidbounce-*.jar
+          name: liquidbouncex-jar
+          path: build/libs/liquidbouncex-*.jar
           if-no-files-found: error
 
   publish-release:

@@ -145,8 +145,10 @@ object ClientInteropServer {
                     staticFiles("/marketplace", MarketplaceManager.marketplaceRoot)
 
                     singlePageApplication {
-                        applicationRoute = "/${Theme.Origin.RESOURCE.tag}/${LiquidBounce.CLIENT_NAME.lowercase()}"
-                        filesPath = "resources/liquidbounce/themes/${LiquidBounce.CLIENT_NAME.lowercase()}"
+                        // NOTE: route and filesPath hardcoded "liquidbounce" — must match the
+                        // physical theme folder in the JAR, not the rebranded CLIENT_NAME.
+                        applicationRoute = "/${Theme.Origin.RESOURCE.tag}/liquidbounce"
+                        filesPath = "resources/liquidbounce/themes/liquidbounce"
                         useResources = true
                     }
                 }

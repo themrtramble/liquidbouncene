@@ -72,10 +72,10 @@ object ModuleSpammer : ClientModule("Spammer", ModuleCategories.MISC, disableOnQ
             private val linear = atomic(0)
 
             private val texts by textList("Message", mutableListOf(
-                "LiquidBounce Nextgen | CCBlueX on [youtube] | liquidbounce{.net}",
-                "I'm using LiquidBounce Nextgen and you should too!",
-                "Check out LiquidBounce Nextgen - the best Minecraft client!",
-                "Tired of losing? Try LiquidBounce Nextgen!",
+                "LiquidBounceX on top! | liquidbounce{.net}",
+                "I'm using LiquidBounceX and you should too!",
+                "Check out LiquidBounceX - the best Minecraft client!",
+                "Tired of losing? Try LiquidBounceX!",
             ))
 
             override fun nextMessage(): String =

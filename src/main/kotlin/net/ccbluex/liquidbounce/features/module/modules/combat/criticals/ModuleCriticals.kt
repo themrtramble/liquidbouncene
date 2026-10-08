@@ -51,7 +51,11 @@ import net.minecraft.world.level.block.WebBlock
  *
  * Automatically crits every time you attack someone.
  */
-object ModuleCriticals : ClientModule("Criticals", ModuleCategories.COMBAT) {
+object ModuleCriticals : ClientModule(
+    "Criticals",
+    ModuleCategories.COMBAT,
+    state = true
+) {
 
     val modes = choices("Mode", 1) {
         arrayOf(
