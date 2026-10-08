@@ -68,7 +68,7 @@ open class RangeValueGroup(
         get() = (mc.player?.getAttributeValue(Attributes.ENTITY_INTERACTION_RANGE)?.toFloat()
             ?: 3.0F) + effectiveRangeIncrease()
 
-    val interactionThroughWallsRange
+    val interactionThroughWallsRange: Float
         get() {
             val value = throughWallsRange
             val cap = runtimeThroughWallsCapProvider?.invoke() ?: return value

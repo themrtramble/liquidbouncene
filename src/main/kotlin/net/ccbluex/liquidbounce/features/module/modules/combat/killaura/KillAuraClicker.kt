@@ -59,7 +59,7 @@ object KillAuraClicker : Clicker<ModuleKillAura>(
 
         private val ignoreOnShieldBreak by boolean("IgnoreOnShieldBreak", true)
         private val ignoreOnMaceSmash by boolean("IgnoreOnMaceSmash", true)
-        private val ignoreWhenExitingRange by boolean("IgnoreWhenExitingRange", true)
+        private val ignoreWhenExitingRange by boolean("IgnoreWhenExitingRange", false)
 
         override fun isCooldownPassed(ticks: Int) = when {
             super.isCooldownPassed(ticks) -> true

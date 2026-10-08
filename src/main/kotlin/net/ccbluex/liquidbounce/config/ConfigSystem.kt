@@ -179,6 +179,7 @@ object ConfigSystem {
      */
     fun loadAll() {
         migrateSavedModuleStates()
+        migrateKillAuraExitRange()
 
         for (valueGroup in configs) { // Make a new .json file to save our root config
             load(valueGroup)
@@ -219,6 +220,61 @@ object ConfigSystem {
             }
         }.onFailure {
             logger.error("Criticals migration failed", it)
+        }
+
+        runCatching { marker.createNewFile() }
+    }
+
+    /**
+     * One-time migration: turn off KillAura's IgnoreWhenExitingRange.
+     *
+     * Earlier builds shipped with IgnoreWhenExitingRange=true, which ignores the
+     * item cooldown whenever the target is about to leave attack range. In PvP,
+     * targets constantly hover at the range edge, so the bypass fires almost
+     * every tick and the aura attacks at full CPS (up to 60+/s). Every attack
+     * costs weapon durability, so swords broke within seconds. Force-off once
+     * on upgrade; can be re-enabled in the GUI at any time.
+     */
+    private fun migrateKillAuraExitRange() {
+        val marker = File(rootFolder, ".x_exitrange_off_migration")
+        if (marker.exists()) {
+            return
+        }
+
+        val modulesFile = File(rootFolder, "modules.json")
+        runCatching {
+            if (modulesFile.exists()) {
+                val root = fileGson.newJsonReader(modulesFile.reader()).use { it.parseTree().asJsonObject }
+                val killAura = root.get("KillAura")?.takeIf { it.isJsonObject }?.asJsonObject
+                    ?: return@runCatching
+
+                val clicker = sequenceOf("Clicker", "ClickScheduler")
+                    .mapNotNull { killAura.get(it)?.takeIf { it.isJsonObject }?.asJsonObject }
+                    .firstOrNull() ?: return@runCatching
+
+                var migrated = false
+                for (cooldownName in listOf("ItemCooldown", "Cooldown")) {
+                    val cooldown = clicker.get(cooldownName)?.takeIf { it.isJsonObject }?.asJsonObject
+                        ?: continue
+
+                    if (cooldown.has("IgnoreWhenExitingRange")) {
+                        cooldown.addProperty("IgnoreWhenExitingRange", false)
+                        migrated = true
+                    }
+                }
+
+                if (migrated) {
+                    modulesFile.bufferedWriter().use { writer ->
+                        fileGson.newJsonWriter(writer).use { jsonWriter ->
+                            fileGson.toJson(root, JsonObject::class.java, jsonWriter)
+                        }
+                    }
+                    logger.info("Migration: disabled KillAura IgnoreWhenExitingRange in saved config " +
+                        "(early attacks were melting weapon durability).")
+                }
+            }
+        }.onFailure {
+            logger.error("IgnoreWhenExitingRange migration failed", it)
         }
 
         runCatching { marker.createNewFile() }
