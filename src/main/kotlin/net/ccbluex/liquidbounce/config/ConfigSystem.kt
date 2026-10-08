@@ -21,7 +21,6 @@ package net.ccbluex.liquidbounce.config
 import com.google.gson.Gson
 import com.google.gson.JsonElement
 import com.google.gson.JsonObject
-import net.ccbluex.liquidbounce.LiquidBounce
 import net.ccbluex.liquidbounce.config.gson.fileGson
 import net.ccbluex.liquidbounce.config.gson.util.parseTree
 import net.ccbluex.liquidbounce.config.types.Config
@@ -51,8 +50,11 @@ object ConfigSystem {
         private set
 
     // Config directory folder
+    // NOTE: hardcoded "LiquidBounceNE" instead of CLIENT_NAME — decouples config
+    // isolation from the resource namespace (liquidbounce:) that themes and
+    // assets depend on. Renaming CLIENT_NAME breaks resource loading.
     val rootFolder = File(
-        mc.gameDirectory, LiquidBounce.CLIENT_NAME
+        mc.gameDirectory, "LiquidBounceNE"
     ).apply {
         // Check if there is already a config folder and if not create new folder
         // (mkdirs not needed - .minecraft should always exist)
