@@ -113,6 +113,7 @@ object ModuleKillAura : ClientModule("KillAura", ModuleCategories.COMBAT) {
     internal var waitTicks = 0
 
     init {
+        tree(KillAuraHuman)
         tree(KillAuraAutoBlock)
         tree(TargetRenderer(this) {
             targetTracker.target?.takeUnless { ModuleElytraTarget.isSameTargetRendering(it) }

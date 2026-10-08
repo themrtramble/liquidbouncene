@@ -26,6 +26,7 @@ import net.ccbluex.liquidbounce.utils.aiming.data.Rotation
 import net.ccbluex.liquidbounce.utils.aiming.features.MovementCorrection
 import net.ccbluex.liquidbounce.utils.aiming.features.processors.FailRotationProcessor
 import net.ccbluex.liquidbounce.utils.aiming.features.processors.ShortStopRotationProcessor
+import net.ccbluex.liquidbounce.utils.aiming.features.processors.anglesmooth.AngleSmooth
 import net.ccbluex.liquidbounce.utils.aiming.features.processors.anglesmooth.impl.AccelerationAngleSmooth
 import net.ccbluex.liquidbounce.utils.aiming.features.processors.anglesmooth.impl.AiAngleSmooth
 import net.ccbluex.liquidbounce.utils.aiming.features.processors.anglesmooth.impl.InterpolationAngleSmooth
@@ -44,15 +45,36 @@ open class RotationsValueGroup(
     combatSpecific: Boolean = false
 ) : ValueGroup("Rotations") {
 
+    /**
+     * The acceleration angle smooth mode instance when this group is combat-specific.
+     * Exposed so humanized combat profiles can use it as a runtime override
+     * without changing the user's saved mode selection.
+     */
+    var accelerationModeCandidate: AccelerationAngleSmooth? = null
+        private set
+
+    /**
+     * Optional provider for a runtime angle smooth override — not persisted.
+     * While it returns a non-null mode, that mode takes precedence over the
+     * configured angle smooth mode in [toRotationTarget] and [calculateTicks].
+     */
+    var angleSmoothOverrideProvider: (() -> AngleSmooth?)? = null
+
+    private fun effectiveAngleSmooth(): AngleSmooth =
+        angleSmoothOverrideProvider?.invoke() ?: angleSmooth.activeMode
+
     private val angleSmooth = modes(owner, "AngleSmooth", 0) {
         val linearAngleSmooth = LinearAngleSmooth(it)
         val interpolationAngleSmooth = if (combatSpecific) InterpolationAngleSmooth(it) else null
+
+        val accelerationAngleSmooth = AccelerationAngleSmooth(it)
+        this@RotationsValueGroup.accelerationModeCandidate = accelerationAngleSmooth
 
         listOfNotNull(
             linearAngleSmooth,
             SigmoidAngleSmooth(it),
             interpolationAngleSmooth,
-            AccelerationAngleSmooth(it),
+            accelerationAngleSmooth,
             if (combatSpecific) AiAngleSmooth(it, interpolationAngleSmooth ?: linearAngleSmooth) else null
         ).toTypedArray()
     }
@@ -74,7 +96,7 @@ open class RotationsValueGroup(
         rotation,
         entity,
         listOfNotNull(
-            angleSmooth.activeMode,
+            effectiveAngleSmooth(),
             fail?.takeIf { it.running },
             shortStop?.takeIf { it.running }
         ),
@@ -94,7 +116,7 @@ open class RotationsValueGroup(
      * @param rotation The rotation to rotate to
      * @return The amount of ticks it takes to rotate to the rotation
      */
-    fun calculateTicks(rotation: Rotation) = angleSmooth.activeMode
+    fun calculateTicks(rotation: Rotation) = effectiveAngleSmooth()
         .calculateTicks(RotationManager.actualServerRotation, rotation)
 
 }

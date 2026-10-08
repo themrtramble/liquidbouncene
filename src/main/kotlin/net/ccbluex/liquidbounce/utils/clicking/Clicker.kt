@@ -34,6 +34,30 @@ import net.minecraft.client.Minecraft
 import net.minecraft.util.Util
 
 /**
+ * A runtime behavior profile for a [Clicker] that can override the click scheduling
+ * without touching the persisted configuration (e.g. a humanized combat profile).
+ *
+ * All reads are live: when [profileActive] is false the profile is ignored entirely
+ * and the configured values take effect again.
+ */
+interface ClickBehaviorProfile {
+
+    val profileActive: Boolean
+
+    val overrideCps: IntRange? get() = null
+
+    val overrideMaxPerTick: Int? get() = null
+
+    val overrideTechnique: ClickTechnique? get() = null
+
+    /**
+     * When true, clicks respect the vanilla miss cooldown after a failed hit.
+     */
+    val overrideMissCooldown: Boolean? get() = null
+
+}
+
+/**
  * An attack scheduler
  *
  * Minecraft is counting every click until it handles all inputs.
@@ -59,6 +83,15 @@ open class Clicker<T>(
         private const val TICKS_AHEAD = 20
     }
 
+    /**
+     * Runtime behavior profile — not persisted, not part of the configuration.
+     * While active it takes precedence over the configured values.
+     */
+    var behaviorProfile: ClickBehaviorProfile? = null
+
+    private val activeProfile: ClickBehaviorProfile?
+        get() = behaviorProfile?.takeIf { it.profileActive }
+
     private val technique by enumChoice("Technique", ClickTechnique.HUMAN)
     private val cps by intRange("CPS", 55..65, 1..maxCps, "clicks")
     private val maxPerTick by int("MaxPerTick", 3, 1..5, "clicks")
@@ -81,12 +114,12 @@ open class Clicker<T>(
     }
 
     private val passesMissCooldown
-        get() = !(missCooldown?.get() == true && mc.missTime > 0)
+        get() = !((activeProfile?.overrideMissCooldown ?: (missCooldown?.get() == true)) && mc.missTime > 0)
 
     private val human = HumanClickTiming()
 
     private val plan = ClickPlan({ recent, comboMs, cps, random ->
-        when (technique) {
+        when (activeProfile?.overrideTechnique ?: technique) {
             ClickTechnique.HUMAN -> human
             ClickTechnique.CONSTANT -> ConstantClickTiming
         }.nextInterval(recent, comboMs, cps, random)
@@ -181,8 +214,8 @@ open class Clicker<T>(
         ticksSinceLastClick++
         clickAmount = null
 
-        plan.cps = cps
-        plan.maxPerTick = maxPerTick
+        plan.cps = activeProfile?.overrideCps ?: cps
+        plan.maxPerTick = activeProfile?.overrideMaxPerTick ?: maxPerTick
         plan.tick(Util.getMillis())
     }
 

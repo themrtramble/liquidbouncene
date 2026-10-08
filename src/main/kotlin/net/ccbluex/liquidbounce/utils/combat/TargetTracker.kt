@@ -124,7 +124,7 @@ open class TargetSelector(
     /**
      * Update should be called to always pick the best target out of the current world context
      */
-    fun targets(): MutableList<LivingEntity> {
+    open fun targets(): MutableList<LivingEntity> {
         val entities = ObjectArrayList<LivingEntity>()
 
         for (entity in world.entitiesForRendering()) {

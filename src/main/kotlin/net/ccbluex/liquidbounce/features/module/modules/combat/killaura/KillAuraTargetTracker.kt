@@ -21,6 +21,7 @@ package net.ccbluex.liquidbounce.features.module.modules.combat.killaura
 import net.ccbluex.liquidbounce.features.module.modules.combat.ModuleAutoWeapon
 import net.ccbluex.liquidbounce.utils.client.isOlderThanOrEqual1_8
 import net.ccbluex.liquidbounce.utils.client.player
+import net.ccbluex.liquidbounce.utils.aiming.utils.RotationUtil
 import net.ccbluex.liquidbounce.utils.combat.TargetTracker
 import net.ccbluex.liquidbounce.utils.entity.wouldBlockHit
 import net.ccbluex.liquidbounce.utils.item.isAxe
@@ -36,7 +37,13 @@ object KillAuraTargetTracker : TargetTracker() {
     private val ignoreShield by boolean("IgnoreShield", true)
 
     override fun validate(entity: LivingEntity): Boolean {
-        return super.validate(entity) && validateShield(entity)
+        if (!super.validate(entity) || !validateShield(entity)) {
+            return false
+        }
+
+        // Humanized: humans do not hit enemies behind their back — only attack
+        // within the view direction angle.
+        return !KillAuraHuman.enabled || RotationUtil.crosshairAngleToEntity(entity) <= KillAuraHuman.directionalFov
     }
 
     /**
@@ -52,6 +59,19 @@ object KillAuraTargetTracker : TargetTracker() {
         }
 
         return !entity.wouldBlockHit
+    }
+
+    override fun targets(): MutableList<LivingEntity> {
+        val entities = super.targets()
+
+        if (KillAuraHuman.enabled) {
+            // Humanized: attack what is in front of you — prioritise enemies by view
+            // direction, like a real player tracking targets with their crosshair.
+            // The stable sort keeps the regular priorities as a tiebreaker.
+            entities.sortWith(compareBy { RotationUtil.crosshairAngleToEntity(it) })
+        }
+
+        return entities
     }
 
 }
