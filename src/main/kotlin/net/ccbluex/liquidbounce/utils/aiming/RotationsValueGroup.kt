@@ -50,7 +50,7 @@ open class RotationsValueGroup(
      * Exposed so humanized combat profiles can use it as a runtime override
      * without changing the user's saved mode selection.
      */
-    var accelerationModeCandidate: AccelerationAngleSmooth? = null
+    internal var accelerationModeCandidate: AccelerationAngleSmooth? = null
         private set
 
     /**
@@ -58,7 +58,7 @@ open class RotationsValueGroup(
      * While it returns a non-null mode, that mode takes precedence over the
      * configured angle smooth mode in [toRotationTarget] and [calculateTicks].
      */
-    var angleSmoothOverrideProvider: (() -> AngleSmooth?)? = null
+    internal var angleSmoothOverrideProvider: (() -> AngleSmooth?)? = null
 
     private fun effectiveAngleSmooth(): AngleSmooth =
         angleSmoothOverrideProvider?.invoke() ?: angleSmooth.activeMode
