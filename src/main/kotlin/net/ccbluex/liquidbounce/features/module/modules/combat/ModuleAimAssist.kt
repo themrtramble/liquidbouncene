@@ -273,21 +273,19 @@ object ModuleAimAssist : ClientModule("AimAssist", ModuleCategories.COMBAT) {
         wobblePitch = 0f
     }
 
-    private companion object {
-        /** Angle below which tracking switches from gentle pull to tight stick. */
-        const val RAMP_DEGREES = 12f
+    /** Angle below which tracking switches from gentle pull to tight stick. */
+    private const val RAMP_DEGREES = 12f
 
-        /** Scales [stickiness] into the on-target tracking factor. */
-        const val NEAR_FACTOR_SCALE = 2.3f
+    /** Scales [stickiness] into the on-target tracking factor. */
+    private const val NEAR_FACTOR_SCALE = 2.3f
 
-        /** New target must be this much closer (squared) to steal the lock. */
-        const val HYSTERESIS_FACTOR = 0.75f
+    /** New target must be this much closer (squared) to steal the lock. */
+    private const val HYSTERESIS_FACTOR = 0.75f
 
-        const val WOBBLE_YAW_SCALE = 0.35f
-        const val WOBBLE_PITCH_SCALE = 0.22f
-        const val WOBBLE_REVERSION = 0.22f
-        const val WOBBLE_YAW_LIMIT = 1.6f
-        const val WOBBLE_PITCH_LIMIT = 1.0f
-    }
+    private const val WOBBLE_YAW_SCALE = 0.35f
+    private const val WOBBLE_PITCH_SCALE = 0.22f
+    private const val WOBBLE_REVERSION = 0.22f
+    private const val WOBBLE_YAW_LIMIT = 1.6f
+    private const val WOBBLE_PITCH_LIMIT = 1.0f
 
 }
