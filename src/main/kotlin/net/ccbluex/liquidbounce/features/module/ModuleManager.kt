@@ -31,6 +31,7 @@ import net.ccbluex.liquidbounce.event.events.WorldChangeEvent
 import net.ccbluex.liquidbounce.event.handler
 import net.ccbluex.liquidbounce.event.sequenceHandler
 import net.ccbluex.liquidbounce.event.tickUntil
+import net.ccbluex.liquidbounce.features.module.modules.combat.ModuleAimAssist
 import net.ccbluex.liquidbounce.features.module.modules.combat.ModuleAimbot
 import net.ccbluex.liquidbounce.features.module.modules.combat.ModuleAutoClicker
 import net.ccbluex.liquidbounce.features.module.modules.world.automobheal.AutoMobHeal
@@ -459,6 +460,7 @@ object ModuleManager : EventListener, Collection<ClientModule> by modules {
         val builtin = arrayOf(
             // Combat
             ModuleAimbot,
+            ModuleAimAssist,
             ModuleAutoArmor,
             ModuleAutoBow,
             ModuleAutoClicker,
