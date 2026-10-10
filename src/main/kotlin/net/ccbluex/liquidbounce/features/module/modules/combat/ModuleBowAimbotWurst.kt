@@ -181,7 +181,10 @@ object ModuleBowAimbotWurst : ClientModule(
         val msgY2 = msgY1 + 10
 
         // background
-        event.context.fill(msgX1, msgY1, msgX2, msgY2, 0x80000000)
+        @Suppress("MagicNumber")
+        val backgroundColor = 0x80000000.toInt()
+
+        event.context.fill(msgX1, msgY1, msgX2, msgY2, backgroundColor)
 
         // text
         event.context.text(font, message, msgX1 + 2, msgY1 + 1, Color4b.WHITE.argb)
