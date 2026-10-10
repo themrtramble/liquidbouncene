@@ -45,11 +45,13 @@ import net.ccbluex.liquidbounce.utils.client.Timer
 import net.ccbluex.liquidbounce.utils.combat.TargetPriority
 import net.ccbluex.liquidbounce.utils.combat.TargetTracker
 import net.ccbluex.liquidbounce.utils.entity.rotation
+import net.ccbluex.liquidbounce.utils.entity.squaredBoxedDistanceTo
 import net.ccbluex.liquidbounce.utils.inventory.InventoryManager
 import net.ccbluex.liquidbounce.utils.raytracing.isLookingAtEntity
 import net.ccbluex.liquidbounce.utils.render.TargetRenderer
 import net.minecraft.client.gui.screens.inventory.AbstractContainerScreen
 import net.minecraft.world.entity.Entity
+import net.minecraft.world.entity.LivingEntity
 
 /**
  * Aimbot module
@@ -67,6 +69,24 @@ object ModuleAimbot : ClientModule("Aimbot", ModuleCategories.COMBAT, aliases = 
     }
     private val pointTracker = tree(PointTracker(this))
     private val lazyRotation by boolean("LazyRotation", false)
+
+    /**
+     * Nearest Enemy Auto Aim
+     *
+     * When multiple enemies are around, always locks the aim onto the nearest
+     * valid one. The moment the current target is eliminated or becomes
+     * invalid (dead, gone or out of range), the aim automatically moves over
+     * to the next nearest enemy — no manual target switching needed.
+     *
+     * Example: one enemy 5 blocks away and another 9 blocks away — the aim
+     * locks onto the 5-block enemy first; once that enemy is gone, it moves to
+     * the 9-block enemy. Distances are recalculated every tick, so whichever
+     * enemy is closest at the moment is the one being tracked.
+     *
+     * OFF by default — the regular crosshair-direction targeting stays active
+     * until this is enabled manually.
+     */
+    private val nearestEnemy by boolean("NearestEnemy", false)
 
     private val requires by multiEnumChoice<KillAuraRequirements>("Requires")
 
@@ -171,7 +191,7 @@ object ModuleAimbot : ClientModule("Aimbot", ModuleCategories.COMBAT, aliases = 
     }
 
     private fun findNextTargetRotation(): Pair<Entity, RotationWithVector>? {
-        for (entity in targetTracker.targets()) {
+        for (entity in candidateEntities()) {
             if (lazyRotation) {
                 val currentRotation = player.rotation
                 val currentHit = isLookingAtEntity(
@@ -209,6 +229,25 @@ object ModuleAimbot : ClientModule("Aimbot", ModuleCategories.COMBAT, aliases = 
 
         targetTracker.reset()
         return null
+    }
+
+    /**
+     * Entities to aim at, in selection order.
+     *
+     * With [nearestEnemy] enabled, the entities are re-sorted by distance on
+     * every tick, so the closest valid enemy always gets the aim — and once it
+     * is eliminated or leaves the range, the next nearest one takes over
+     * automatically. Otherwise the tracker's own priority order is used,
+     * completely unchanged.
+     */
+    private fun candidateEntities(): List<LivingEntity> {
+        val targets = targetTracker.targets()
+
+        return if (nearestEnemy) {
+            targets.sortedBy { it.squaredBoxedDistanceTo(player) }
+        } else {
+            targets
+        }
     }
 
     private enum class IgnoreOpened(
