@@ -187,8 +187,12 @@ object ModuleScaffold : ClientModule("Scaffold", ModuleCategories.WORLD) {
 
     /**
      * Scaffold tower mode
+     *
+     * Motion is the pro default: hold jump and the scaffold towers you up
+     * with smooth re-jumps (vanilla jump velocity, no packet abuse).
+     * None left users without any tower which felt broken.
      */
-    val towerMode = choices("Tower", 0) {
+    val towerMode = choices("Tower", 1) {
         arrayOf(
             ScaffoldTowerNone,
             ScaffoldTowerMotion,

@@ -19,6 +19,7 @@
 package net.ccbluex.liquidbounce.config
 
 import com.google.gson.Gson
+import com.google.gson.JsonArray
 import com.google.gson.JsonElement
 import com.google.gson.JsonObject
 import net.ccbluex.liquidbounce.config.gson.fileGson
@@ -180,6 +181,7 @@ object ConfigSystem {
     fun loadAll() {
         migrateSavedModuleStates()
         migrateKillAuraExitRange()
+        migrateScaffoldProDefaults()
 
         for (valueGroup in configs) { // Make a new .json file to save our root config
             load(valueGroup)
@@ -275,6 +277,122 @@ object ConfigSystem {
             }
         }.onFailure {
             logger.error("IgnoreWhenExitingRange migration failed", it)
+        }
+
+        runCatching { marker.createNewFile() }
+    }
+
+    /**
+     * One-time migration: pro default profile for Scaffold.
+     *
+     * The saved config is a full snapshot, so it silently overrides code
+     * defaults on every start. This migration rewrites the lag-relevant
+     * entries of the saved Scaffold module once on upgrade:
+     *  - Tower "None" (old default) -> "Motion": hold jump towers up
+     *    smoothly with vanilla-velocity re-jumps.
+     *  - RotationTiming "OnTick"/"OnTickSnap" -> "Normal": OnTick timings
+     *    send raw PosRot packets which cause rubber-banding (desync lag).
+     *  - Delay > 0 -> 0..0: any placement delay feels like input lag.
+     *  - SafeWalk "None" -> "Safe": without edge protection you fall off
+     *    mid-bridge, which reads as scaffold "not working".
+     *
+     * Deliberate user choices are respected (Karhu/Vulcan/Hypixel towers,
+     * OnEdge safewalk, SameY, Eagle, bypass features all stay untouched).
+     */
+    private fun migrateScaffoldProDefaults() {
+        val marker = File(rootFolder, ".x_scaffold_pro_migration")
+        if (marker.exists()) {
+            return
+        }
+
+        val modulesFile = File(rootFolder, "modules.json")
+        runCatching {
+            if (modulesFile.exists()) {
+                val root = fileGson.newJsonReader(modulesFile.reader()).use { it.parseTree().asJsonObject }
+
+                // Navigate the real file layout:
+                // root -> "value": [ { "name": "Scaffold", "value": [ ... ] } ]
+                val modules = root.get("value")?.takeIf { it.isJsonArray }?.asJsonArray ?: return@runCatching
+                val scaffold = modules.firstOrNull { element ->
+                    element.isJsonObject && element.asJsonObject.get("name")
+                        ?.takeIf { it.isJsonPrimitive }?.asString == "Scaffold"
+                }?.asJsonObject ?: return@runCatching
+                val values = scaffold.get("value")?.takeIf { it.isJsonArray }?.asJsonArray ?: return@runCatching
+
+                var migrated = false
+
+                for (valueElement in values) {
+                    if (!valueElement.isJsonObject) {
+                        continue
+                    }
+
+                    val value = valueElement.asJsonObject
+                    val valueName = value.get("name")?.takeIf { it.isJsonPrimitive }?.asString ?: continue
+
+                    when (valueName) {
+                        "Tower", "SafeWalk" -> {
+                            val active = value.get("active")?.takeIf { it.isJsonPrimitive }?.asString
+                            val target = if (valueName == "Tower") {
+                                if (active == null || active == "None") "Motion" else null
+                            } else {
+                                if (active == "None") "Safe" else null
+                            }
+
+                            if (target != null) {
+                                value.addProperty("active", target)
+                                migrated = true
+                            }
+                        }
+
+                        "Delay" -> {
+                            val delay = value.get("value")?.takeIf { it.isJsonArray }?.asJsonArray ?: continue
+
+                            if (delay.size() == 2 && (delay[0].asInt > 0 || delay[1].asInt > 0)) {
+                                value.remove("value")
+                                value.add("value", JsonArray().apply {
+                                    add(0)
+                                    add(0)
+                                })
+                                migrated = true
+                            }
+                        }
+
+                        "Rotations" -> {
+                            val rotations = value.get("value")?.takeIf { it.isJsonArray }?.asJsonArray ?: continue
+
+                            for (rotationElement in rotations) {
+                                if (!rotationElement.isJsonObject) {
+                                    continue
+                                }
+
+                                val rotation = rotationElement.asJsonObject
+                                if (rotation.get("name")?.takeIf { it.isJsonPrimitive }?.asString != "RotationTiming") {
+                                    continue
+                                }
+
+                                val timing = rotation.get("value")?.takeIf { it.isJsonPrimitive }?.asString
+                                if (timing == "OnTick" || timing == "OnTickSnap") {
+                                    rotation.remove("value")
+                                    rotation.addProperty("value", "Normal")
+                                    migrated = true
+                                }
+                            }
+                        }
+                    }
+                }
+
+                if (migrated) {
+                    modulesFile.bufferedWriter().use { writer ->
+                        fileGson.newJsonWriter(writer).use { jsonWriter ->
+                            fileGson.toJson(root, JsonObject::class.java, jsonWriter)
+                        }
+                    }
+                    logger.info("Migration: applied pro default profile to Scaffold in saved config " +
+                        "(Tower Motion, zero delay, legit rotation timing, SafeWalk on).")
+                }
+            }
+        }.onFailure {
+            logger.error("Scaffold pro defaults migration failed", it)
         }
 
         runCatching { marker.createNewFile() }
